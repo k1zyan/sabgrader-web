@@ -1,1469 +1,239 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SABGRADER</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg: #07080c;
-            --surface: #0f1118;
-            --surface-light: #161924;
-            --border: #232738;
-            --text: #f3f4f8;
-            --muted: #7a8199;
-            --cyan: #00f0ff;
-            --cyan-glow: rgba(0, 240, 255, 0.35);
-            --orange: #ff7b00;
-            --orange-glow: rgba(255, 123, 0, 0.45);
-            --green: #00ff88;
-            --red: #ff2a55;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        /* HEADER */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 20px;
-            background: rgba(15, 17, 24, 0.9);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            z-index: 20;
-        }
-
-        .logo {
-            font-weight: 900;
-            font-size: 19px;
-            letter-spacing: 2px;
-            color: #fff;
-            text-shadow: 0 0 14px var(--cyan-glow);
-        }
-
-        .balance-box {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 240, 255, 0.08);
-            border: 1px solid rgba(0, 240, 255, 0.35);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.12);
-            padding: 6px 14px;
-            border-radius: 10px;
-            font-weight: 800;
-            font-size: 15px;
-            color: var(--cyan);
-        }
-
-        .coin-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #ffe66d, #ff9900);
-            box-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #1a1000;
-            font-size: 10px;
-            font-weight: 900;
-            flex-shrink: 0;
-        }
-
-        /* CONTENT */
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 16px 100px;
-            max-width: 640px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        .tab {
-            display: none;
-            animation: tabFade 0.25s ease;
-        }
-        .tab.active { display: block; }
-        @keyframes tabFade {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .title {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 18px;
-            color: #fff;
-        }
-
-        /* CASES GRID */
-        .cases-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-        }
-
-        .case-card {
-            background: linear-gradient(180deg, var(--surface-light) 0%, var(--surface) 100%);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .case-card::before {
-            content: '';
-            position: absolute;
-            top: -40%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 120px;
-            background: radial-gradient(circle, var(--case-glow, var(--cyan-glow)) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .case-card:hover {
-            border-color: var(--case-color, var(--cyan));
-            box-shadow: 0 0 22px rgba(0, 240, 255, 0.15);
-        }
-
-        .case-card:active {
-            transform: scale(0.97);
-        }
-
-        .case-preview {
-            width: 100%;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .case-preview img {
-            max-width: 96px;
-            max-height: 96px;
-            object-fit: contain;
-            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7));
-        }
-
-        .case-title {
-            font-size: 15px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            z-index: 1;
-        }
-
-        .case-btn-price {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0, 240, 255, 0.1);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 14px;
-            color: var(--cyan);
-            z-index: 1;
-        }
-
-        /* UPGRADER */
-        .upgrader-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .wheel-stage {
-            position: relative;
-            width: 310px;
-            height: 310px;
-            margin: 6px 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #upgrader-canvas {
-            width: 310px;
-            height: 310px;
-            display: block;
-        }
-
-        .wheel-center-info {
-            position: absolute;
-            width: 176px;
-            height: 176px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #141722 0%, #090a0f 100%);
-            border: 1px solid #242838;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .upg-percent {
-            font-size: 36px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            color: #fff;
-            text-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
-            transition: color 0.3s, text-shadow 0.3s;
-        }
-
-        .upg-status {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-top: 6px;
-            transition: color 0.3s;
-        }
-
-        /* Указатель-треугольник по внешнему кольцу */
-        .pointer-orbit {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 5;
-            transform: rotate(0deg);
-        }
-
-        .pointer-triangle {
-            position: absolute;
-            top: 22px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 11px solid transparent;
-            border-right: 11px solid transparent;
-            border-top: 18px solid #ff8c00;
-            filter: drop-shadow(0 0 8px #ff7b00) drop-shadow(0 0 16px rgba(255, 123, 0, 0.8));
-        }
-        .pointer-triangle::after {
-            content: '';
-            position: absolute;
-            top: -16px;
-            left: -6px;
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 10px solid #ffd280;
-        }
-
-        .upg-controls {
-            width: 100%;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .upg-slots {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .upg-slot {
-            background: var(--surface-light);
-            border: 1px dashed #2e344b;
-            border-radius: 12px;
-            height: 112px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
-        }
-
-        .upg-slot:hover {
-            border-color: var(--cyan);
-            box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.08);
-        }
-
-        .upg-slot.filled {
-            border-style: solid;
-            border-color: rgba(0, 240, 255, 0.4);
-        }
-
-        .upg-slot img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            margin-bottom: 6px;
-        }
-
-        .upg-slot-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--muted);
-        }
-
-        .upg-slot-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-
-        .upg-slot-price {
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--cyan);
-            margin-top: 2px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .btn-neon {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(90deg, #0077ff, var(--cyan));
-            color: #030712;
-            font-size: 15px;
-            font-weight: 900;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: 0 0 20px var(--cyan-glow);
-            transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-        }
-
-        .btn-neon:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .btn-neon:disabled {
-            background: #1b1e2b;
-            color: #505770;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        /* INVENTORY */
-        .inv-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .inv-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: border-color 0.2s;
-        }
-
-        .inv-card:hover {
-            border-color: rgba(0, 240, 255, 0.35);
-        }
-
-        .inv-card img {
-            width: 58px;
-            height: 58px;
-            object-fit: contain;
-            margin-bottom: 8px;
-        }
-
-        .inv-name {
-            font-size: 11px;
-            font-weight: 700;
-            text-align: center;
-            color: #fff;
-            height: 28px;
-            line-height: 14px;
-            overflow: hidden;
-            margin-bottom: 4px;
-        }
-
-        .inv-price {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--cyan);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-
-        .btn-inv-sell {
-            width: 100%;
-            padding: 6px;
-            border-radius: 7px;
-            border: 1px solid rgba(255, 42, 85, 0.4);
-            background: rgba(255, 42, 85, 0.12);
-            color: var(--red);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-        }
-
-        .btn-inv-sell:active {
-            background: rgba(255, 42, 85, 0.25);
-        }
-        /* BOTTOM NAV */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(15, 17, 24, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
-            z-index: 30;
-        }
-
-        .nav-btn {
-            background: none;
-            border: none;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: color 0.2s, text-shadow 0.2s;
-        }
-
-        .nav-btn.active {
-            color: var(--cyan);
-            text-shadow: 0 0 12px var(--cyan-glow);
-        }
-
-        /* MODALS */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(4, 5, 8, 0.92);
-            backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 100;
-        }
-
-        .modal.active {
-            display: flex;
-            animation: modalIn 0.2s ease;
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ROULETTE */
-        .roulette-box {
-            width: 100%;
-            max-width: 560px;
-            background: var(--surface);
-            border: 1px solid var(--cyan);
-            box-shadow: 0 0 35px rgba(0, 240, 255, 0.2);
-            border-radius: 16px;
-            padding: 18px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .roulette-marker {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 2px;
-            background: var(--cyan);
-            box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan);
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-
-        .roulette-marker::before,
-        .roulette-marker::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            border-left: 7px solid transparent;
-            border-right: 7px solid transparent;
-        }
-
-        .roulette-marker::before {
-            top: 0;
-            border-top: 9px solid var(--cyan);
-        }
-
-        .roulette-marker::after {
-            bottom: 0;
-            border-bottom: 9px solid var(--cyan);
-        }
-
-        .roulette-viewport {
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .roulette-track {
-            display: flex;
-            will-change: transform;
-        }
-
-        .roulette-card {
-            width: 112px;
-            height: 112px;
-            margin: 0 4px;
-            background: var(--surface-light);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-        }
-
-        .roulette-card img {
-            width: 82px;
-            height: 82px;
-            object-fit: contain;
-        }
-
-        /* RESULT & SELECTOR DIALOGS */
-        .dialog-card {
-            width: 100%;
-            max-width: 340px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
-            border-radius: 20px;
-            padding: 24px 20px;
-            text-align: center;
-        }
-
-        .dialog-img {
-            width: 120px;
-            height: 120px;
-            object-fit: contain;
-            margin: 0 auto 14px;
-            filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.25));
-        }
-        .dialog-name {
-            font-size: 19px;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-
-        .dialog-price {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--cyan);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 22px;
-        }
-
-        .dialog-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-sell-big {
-            flex: 1;
-            padding: 14px 10px;
-            border-radius: 12px;
-            border: 1px solid var(--red);
-            background: rgba(255, 42, 85, 0.14);
-            color: var(--red);
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .btn-keep-big {
-            flex: 1;
-            padding: 14px 10px;
-            border-radius: 12px;
-            border: 1px solid var(--cyan);
-            background: rgba(0, 240, 255, 0.14);
-            color: var(--cyan);
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .selector-list {
-            max-height: 55vh;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin: 14px 0 18px;
-        }
-
-        .selector-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--surface-light);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .selector-row:hover {
-            border-color: var(--cyan);
-        }
-
-        .selector-row img {
-            width: 44px;
-            height: 44px;
-            object-fit: contain;
-        }
-
-        .selector-row-name {
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .selector-row-price {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--cyan);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 2px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SABGRADER</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #07080d;
+      --card: #0e111a;
+      --card-2: #141825;
+      --border: #22283d;
+      --text: #f4f6fb;
+      --muted: #7c849e;
+      --cyan: #00f0ff;
+      --orange: #ff7b00;
+      --green: #00f58d;
+      --red: #ff2e55;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); min-height: 100dvh; display: flex; flex-direction: column; overflow-x: hidden; user-select: none; }
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; padding: clamp(10px, 2vw, 16px) clamp(14px, 4vw, 28px); background: rgba(11, 14, 22, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .brand { font-weight: 900; font-size: clamp(16px, 2.4vw, 22px); letter-spacing: 2px; text-shadow: 0 0 14px rgba(0, 240, 255, 0.35); }
+    .balance { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; background: rgba(0, 240, 255, 0.09); border: 1px solid rgba(0, 240, 255, 0.38); box-shadow: 0 0 16px rgba(0, 240, 255, 0.14); color: var(--cyan); font-weight: 800; font-size: clamp(13px, 1.8vw, 16px); }
+    .coin { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 900; color: #160d00; background: radial-gradient(circle at 30% 30%, #ffe875, #ff9900); box-shadow: 0 0 8px rgba(255, 165, 0, 0.55); flex-shrink: 0; }
+    .wrap { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: clamp(14px, 3vw, 28px) clamp(12px, 3vw, 24px) 96px; }
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .heading { font-size: clamp(16px, 2.2vw, 22px); font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 16px; }
+    .cases-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: clamp(10px, 2vw, 18px); }
+    .case-card { background: linear-gradient(180deg, var(--card-2), var(--card)); border: 1px solid var(--border); border-radius: 16px; padding: clamp(12px, 2vw, 18px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.14s, border-color 0.2s, box-shadow 0.2s; }
+    .case-card:hover { border-color: var(--cyan); box-shadow: 0 0 22px rgba(0, 240, 255, 0.16); }
+    .case-card:active { transform: scale(0.97); }
+    .case-art { width: 100%; height: clamp(92px, 14vw, 136px); display: grid; place-items: center; margin-bottom: 10px; }
+    .case-art img { max-width: 82%; max-height: 82%; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7)); }
+    .case-name { font-weight: 800; font-size: clamp(14px, 1.8vw, 16px); margin-bottom: 8px; }
+    .case-price { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--cyan); font-weight: 800; font-size: 13px; }
+    .upg-layout { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; justify-items: center; }
+    @media (min-width: 760px) { .upg-layout { grid-template-columns: minmax(320px, 380px) 1fr; gap: 28px; } }
+    .ring-box { position: relative; width: clamp(260px, 68vw, 330px); height: clamp(260px, 68vw, 330px); display: grid; place-items: center; }
+    #upg-canvas { width: 100%; height: 100%; display: block; }
+    .ring-center { position: absolute; width: 56%; height: 56%; border-radius: 50%; background: radial-gradient(circle, #151926 0%, #090b11 100%); border: 1px solid #262c42; box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; z-index: 2; }
+    .upg-pct { font-size: clamp(26px, 4.5vw, 38px); font-weight: 900; text-shadow: 0 0 16px rgba(255, 255, 255, 0.3); }
+    .upg-sub { font-size: 10px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .marker-orbit { position: absolute; inset: 0; pointer-events: none; z-index: 4; transform: rotate(0deg); }
+    .marker-tip { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 16px solid var(--orange); filter: drop-shadow(0 0 8px var(--orange)) drop-shadow(0 0 16px rgba(255, 123, 0, 0.8)); }
+    .upg-panel { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: clamp(14px, 2.5vw, 20px); display: flex; flex-direction: column; gap: 14px; }
+    .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .slot { height: 112px; border-radius: 12px; border: 1px dashed #2d344c; background: var(--card-2); padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; }
+    .slot:hover { border-color: var(--cyan); box-shadow: inset 0 0 14px rgba(0, 240, 255, 0.08); }
+    .slot.filled { border-style: solid; border-color: rgba(0, 240, 255, 0.42); }
+    .slot img { width: 46px; height: 46px; object-fit: contain; margin-bottom: 5px; }
+    .slot-title { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; }
+    .slot.filled .slot-title { color: var(--text); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-price { font-size: 11px; font-weight: 800; color: var(--cyan); margin-top: 2px; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; background: linear-gradient(90deg, #0077ff, var(--cyan)); color: #040812; font-weight: 900; font-size: 14px; letter-spacing: 1.4px; text-transform: uppercase; box-shadow: 0 0 20px rgba(0, 240, 255, 0.32); transition: transform 0.14s, opacity 0.2s; }
+    .btn-main:active:not(:disabled) { transform: scale(0.98); }
+    .btn-main:disabled { background: #1a1e2c; color: #525973; box-shadow: none; cursor: not-allowed; }
+    .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: clamp(10px, 1.8vw, 14px); }
+    @media (min-width: 760px) { .inv-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+    .inv-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; }
+    .inv-card img { width: 56px; height: 56px; object-fit: contain; margin-bottom: 6px; }
+    .inv-name { font-size: 11px; font-weight: 700; text-align: center; height: 28px; line-height: 14px; overflow: hidden; margin-bottom: 4px; }
+    .inv-price { font-size: 12px; font-weight: 800; color: var(--cyan); display: inline-flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+    .btn-sell-sm { width: 100%; padding: 6px; border-radius: 7px; border: 1px solid rgba(255, 46, 85, 0.42); background: rgba(255, 46, 85, 0.12); color: var(--red); font-size: 10px; font-weight: 800; cursor: pointer; }
+    .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: flex; justify-content: center; gap: clamp(8px, 4vw, 48px); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: rgba(11, 14, 22, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border); }
+    .nav-btn { background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 8px 14px; border-radius: 8px; cursor: pointer; transition: color 0.2s, text-shadow 0.2s; }
+    .nav-btn.active { color: var(--cyan); text-shadow: 0 0 12px rgba(0, 240, 255, 0.45); }
+    .modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 6, 10, 0.92); backdrop-filter: blur(8px); }
+    .modal.open { display: flex; }
+    .reel-shell { width: 100%; max-width: 620px; background: var(--card); border: 1px solid var(--cyan); box-shadow: 0 0 36px rgba(0, 240, 255, 0.2); border-radius: 16px; padding: 18px 0; position: relative; overflow: hidden; }
+    .reel-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%); background: var(--cyan); box-shadow: 0 0 14px var(--cyan); z-index: 5; }
+    .reel-viewport { width: 100%; overflow: hidden; }
+    .reel-track { display: flex; will-change: transform; }
+    .reel-item { width: 110px; height: 110px; margin: 0 4px; border-radius: 12px; background: var(--card-2); border: 1px solid var(--border); flex-shrink: 0; display: grid; place-items: center; padding: 10px; }
+    .reel-item img { width: 80px; height: 80px; object-fit: contain; }
+    .dialog { width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px 18px; text-align: center; box-shadow: 0 0 36px rgba(0, 240, 255, 0.14); }
+    .dialog img { width: 112px; height: 112px; object-fit: contain; margin: 0 auto 12px; display: block; }
+    .dialog-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .dialog-price { font-size: 15px; font-weight: 800; color: var(--cyan); display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+    .dialog-btns { display: flex; gap: 10px; }
+    .btn-red { flex: 1; padding: 13px 10px; border-radius: 12px; border: 1px solid var(--red); background: rgba(255, 46, 85, 0.14); color: var(--red); font-weight: 800; font-size: 12px; cursor: pointer; }
+    .btn-cyan { flex: 1; padding: 13px 10px; border-radius: 12px; border: 1px solid var(--cyan); background: rgba(0, 240, 255, 0.14); color: var(--cyan); font-weight: 800; font-size: 12px; cursor: pointer; }
+    .pick-list { max-height: 55dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0 16px; }
+    .pick-row { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px; background: var(--card-2); border: 1px solid var(--border); cursor: pointer; text-align: left; }
+    .pick-row:hover { border-color: var(--cyan); }
+    .pick-row img { width: 42px; height: 42px; object-fit: contain; }
+    .pick-name { font-size: 13px; font-weight: 700; }
+    .pick-price { font-size: 11px; font-weight: 800; color: var(--cyan); display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+  </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="brand">SABGRADER</div>
+    <div class="balance"><span class="coin">B</span><span id="balance">250</span></div>
+  </header>
 
-    <div class="header">
-        <div class="logo">SABGRADER</div>
-        <div class="balance-box">
-            <span class="coin-icon">B</span>
-            <span id="balance">1000</span>
+  <main class="wrap">
+    <section id="view-cases" class="view active">
+      <div class="heading">Кейсы</div>
+      <div id="cases-grid" class="cases-grid"></div>
+    </section>
+
+    <section id="view-upgrader" class="view">
+      <div class="heading">Апгрейдер</div>
+      <div class="upg-layout">
+        <div class="ring-box">
+          <canvas id="upg-canvas" width="600" height="600"></canvas>
+          <div id="marker-orbit" class="marker-orbit"><div class="marker-tip"></div></div>
+          <div class="ring-center">
+            <div id="upg-pct" class="upg-pct">0.00%</div>
+            <div id="upg-sub" class="upg-sub">ВЫБЕРИТЕ СТАВКУ И ЦЕЛЬ</div>
+          </div>
         </div>
+        <div class="upg-panel">
+          <div class="slots">
+            <div id="slot-stake" class="slot" onclick="openPicker('stake')"><div class="slot-title">Ваша ставка</div></div>
+            <div id="slot-target" class="slot" onclick="openPicker('target')"><div class="slot-title">Желаемый предмет</div></div>
+          </div>
+          <button id="upg-run" class="btn-main" disabled onclick="runUpgrade()">УЛУЧШИТЬ</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-inventory" class="view">
+      <div class="heading">Инвентарь</div>
+      <div id="inv-grid" class="inv-grid"></div>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button type="button" class="nav-btn active" onclick="setTab('cases', this)">Кейсы</button>
+    <button type="button" class="nav-btn" onclick="setTab('upgrader', this)">Апгрейд</button>
+    <button type="button" class="nav-btn" onclick="setTab('inventory', this)">Инвентарь</button>
+  </nav>
+
+  <div id="modal-reel" class="modal">
+    <div class="reel-shell">
+      <div class="reel-line"></div>
+      <div class="reel-viewport"><div id="reel-track" class="reel-track"></div></div>
     </div>
+  </div>
 
-    <div class="content">
-        <!-- КЕЙСЫ -->
-        <div id="tab-cases" class="tab active">
-            <div class="title">Кейсы</div>
-            <div class="cases-grid" id="cases-grid"></div>
-        </div>
-
-        <!-- АПГРЕЙДЕР -->
-        <div id="tab-upgrader" class="tab">
-            <div class="title">Апгрейдер</div>
-            <div class="upgrader-wrap">
-                <div class="wheel-stage">
-                    <canvas id="upgrader-canvas" width="620" height="620"></canvas>
-                    <div class="pointer-orbit" id="pointer-orbit">
-                        <div class="pointer-triangle"></div>
-                    </div>
-                    <div class="wheel-center-info">
-                        <div class="upg-perce
-                            <div class="upg-percent" id="upg-percent">0.00%</div>
-                        <div class="upg-status" id="upg-status">ВЫБЕРИТЕ ПРЕДМЕТЫ</div>
-                    </div>
-                </div>
-
-                <div class="upg-controls">
-                    <div class="upg-slots">
-                        <div class="upg-slot" id="slot-stake" onclick="openSelector('stake')">
-                            <div class="upg-slot-label">Ваша ставка</div>
-                        </div>
-                        <div class="upg-slot" id="slot-target" onclick="openSelector('target')">
-                            <div class="upg-slot-label">Желаемый предмет</div>
-                        </div>
-                    </div>
-                    <button class="btn-neon" id="upg-btn" disabled onclick="spinUpgrader()">УЛУЧШИТЬ</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ИНВЕНТАРЬ -->
-        <div id="tab-inventory" class="tab">
-            <div class="title">Инвентарь</div>
-            <div class="inv-grid" id="inv-grid"></div>
-        </div>
+  <div id="modal-drop" class="modal">
+    <div class="dialog">
+      <img id="drop-img" src="" alt="" />
+      <div id="drop-name" class="dialog-title"></div>
+      <div class="dialog-price"><span class="coin">B</span><span id="drop-price"></span></div>
+      <div class="dialog-btns">
+        <button type="button" id="drop-sell" class="btn-red" onclick="takeDrop('sell')">Продать</button>
+        <button type="button" class="btn-cyan" onclick="takeDrop('keep')">Оставить</button>
+      </div>
     </div>
+  </div>
 
-    <div class="bottom-nav">
-        <button class="nav-btn active" onclick="switchTab('cases', this)">Кейсы</button>
-        <button class="nav-btn" onclick="switchTab('upgrader', this)">Апгрейд</button>
-        <button class="nav-btn" onclick="switchTab('inventory', this)">Инвентарь</button>
+  <div id="modal-pick" class="modal">
+    <div class="dialog">
+      <div id="pick-title" class="heading" style="margin-bottom:0;font-size:15px;">Выбор</div>
+      <div id="pick-list" class="pick-list"></div>
+      <button type="button" class="btn-main" style="background:#1c2130;color:#fff;box-shadow:none;" onclick="closePicker()">Закрыть</button>
     </div>
-
-    <!-- МОДАЛКА РУЛЕТКИ -->
-    <div class="modal" id="modal-roulette">
-        <div class="roulette-box">
-            <div class="roulette-marker"></div>
-            <div class="roulette-viewport">
-                <div class="roulette-track" id="roulette-track"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ВЫИГРЫША -->
-    <div class="modal" id="modal-result">
-        <div class="dialog-card">
-            <img id="res-img" class="dialog-img" src="" alt="">
-            <div id="res-name" class="dialog-name"></div>
-            <div class="dialog-price">
-                <span class="coin-icon">B</span>
-                <span id="res-price"></span>
-            </div>
-            <div class="dialog-actions">
-                <button class="btn-sell-big" id="btn-sell-drop" onclick="resolveDrop('sell')">Продать</button>
-                <button class="btn-keep-big" onclick="resolveDrop('keep')">Оставить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ВЫБОРА -->
-    <div class="modal" id="modal-selector">
-        <div class="dialog-card">
-            <div class="title" style="margin-bottom: 0;" id="selector-title">Выбор</div>
-            <div class="selector-list" id="selector-list"></div>
-            <button class="btn-neon" style="background: #1f2433; color: #fff; box-shadow: none;" onclick="closeSelector()">Закрыть</button>
-        </div>
-    </div>
-
-    <script>
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.setHeaderColor('#0f1118');
-            tg.setBackgroundColor('#07080c');
-        }
-
-        // ТОЧНЫЙ СПИСОК 54 БРЕЙНРОТОВ СО СКРИНШОТОВ И ИХ ЦЕНЫ
-        const BRAINROTS = [
-            // Скрин 1 (17 - 36)
-            { id: "esok_sekolah", name: "Esok Sekolah", wiki: "Esok_Sekolah", price: 17 },
-            { id: "agarini_la_palini", name: "Agarini La Palini", wiki: "Agarini_La_Palini", price: 23 },
-            { id: "abbysaloco", name: "Abbysaloco", wiki: "Abbysaloco", price: 23 },
-            { id: "los_mobills", name: "Los Mobills", wiki: "Los_Mobills", price: 24 },
-            { id: "rainbow_slap", name: "Rainbow Slap", wiki: "Rainbow_Slap", price: 24 },
-            { id: "los_burritos", name: "Los Burritos", wiki: "Los_Burritos", price: 25 },
-            { id: "los_puggles", name: "Los Puggles", wiki: "Los_Puggles", price: 29 },
-            { id: "orcaledon", name: "Orcaledon", wiki: "Orcaledon", price: 30 },{ id: "ketupat_kepat", name: "Ketupat Kepat", wiki: "Ketupat_Kepat", price: 30 },
-            { id: "mieteteira_bicicleteira", name: "Mieteteira Bicicleteira", wiki: "Mieteteira_Bicicleteira", price: 30 },
-            { id: "los_candies", name: "Los Candies", wiki: "Los_Candies", price: 32 },
-            { id: "demon_head", name: "Demon Head", wiki: "Demon_Head", price: 32 },
-            { id: "lavadorito_spinito", name: "Lavadorito Spinito", wiki: "Lavadorito_Spinito", price: 33 },
-            { id: "crystal_slap", name: "Crystal Slap", wiki: "Crystal_Slap", price: 33 },
-            { id: "ying_yang_lamp", name: "Ying Yang Lamp", wiki: "Ying_Yang_Lamp", price: 34 },
-            { id: "bloodmoon_slap", name: "Bloodmoon Slap", wiki: "Bloodmoon_Slap", price: 35 },
-            { id: "cupid_wings", name: "Cupid Wings", wiki: "Cupid_Wings", price: 36 },
-            { id: "los_tangcitos", name: "Los Tangcitos", wiki: "Los_Tangcitos", price: 36 },
-
-            // Скрин 2 (37 - 57)
-            { id: "waverider", name: "Waverider", wiki: "Waverider", price: 37 },
-            { id: "witch_broom", name: "Witch Broom", wiki: "Witch_Broom", price: 40 },
-            { id: "blackhole_bomb", name: "Blackhole Bomb", wiki: "Blackhole_Bomb", price: 40 },
-            { id: "mi_gatito", name: "Mi Gatito", wiki: "Mi_Gatito", price: 41 },
-            { id: "camera_ramen", name: "Camera Ramen", wiki: "Camera_Ramen", price: 41 },
-            { id: "ventoliero_pavon", name: "Ventoliero Pavon", wiki: "Ventoliero_Pavon", price: 44 },
-            { id: "yes_my_examine", name: "Yes My Examine", wiki: "Yes_My_Examine", price: 44 },
-            { id: "los_primos", name: "Los Primos", wiki: "Los_Primos", price: 45 },
-            { id: "air_strike", name: "Air Strike", wiki: "Air_Strike", price: 45 },
-            { id: "candy_sentry", name: "Candy Sentry", wiki: "Candy_Sentry", price: 46 },
-            { id: "los_planitos", name: "Los Planitos", wiki: "Los_Planitos", price: 49 },
-            { id: "la_summer_grande", name: "La Summer Grande", wiki: "La_Summer_Grande", price: 49 },
-            { id: "honey_honey_bear", name: "Honey Honey Bear", wiki: "Honey_Honey_Bear", price: 51 },
-            { id: "garama_and_madundung", name: "Garama and Madundung", wiki: "Garama_and_Madundung", price: 54 },
-            { id: "ketchuru_and_musturu", name: "Ketchuru and Musturu", wiki: "Ketchuru_and_Musturu", price: 54 },
-            { id: "quesadilo_vampiro", name: "Quesadilo Vampiro", wiki: "Quesadilo_Vampiro", price: 55 },
-            { id: "cash_or_card", name: "Cash or Card", wiki: "Cash_or_Card", price: 56 },
-            { id: "noodle_noodle", name: "Noodle Noodle P", wiki: "Noodle_Noodle", price: 57 },
-
-            // Скрин 3 (60 - 98)
-            { id: "phantom_slap", name: "Phantom Slap", wiki: "Phantom_Slap", price: 60 },
-            { id: "la_jolly_grande", name: "La Jolly Grande", wiki: "La_Jolly_Grande", price: 69 },
-            { id: "sammyni_fattini", name: "Sammyni Fattini", wiki: "Sammyni_Fattini", price: 74 },
-            { id: "eviledon", name: "Eviledon", wiki: "Eviledon", price: 75 },
-            { id: "w_or_l", name: "W or L", wiki: "W_or_L", price: 78 },
-            { id: "lava_blaster", name: "Lava Blaster", wiki: "Lava_Blaster", price: 80 },
-            { id: "los_tictacs", name: "Los Tictacs", wiki: "Los_Tictacs", price: 82 },
-            { id: "los_sweethearts", name: "Los Sweethearts", wiki: "Los_Sweethearts", price: 84 },
-            { id: "john_doe", name: "John Doe", wiki: "John_Doe", price: 84 },
-            { id: "pizza_and_ranch", name: "Pizza and Ranch", wiki: "Pizza_and_Ranch", price: 84 },
-            { id: "los_jolly_combination", name: "Los Jolly Combination", wiki: "Los_Jolly_Combination", price: 91 },
-            { id: "popcuru_and_fizzuru", name: "Popcuru and Fizzuru", wiki: "Popcuru_and_Fizzuru", price: 92 },{ id: "los_mariachis", name: "Los Mariachis", wiki: "Los_Mariachis", price: 92 },
-            { id: "quackini_snackini", name: "Quackini Snackini", wiki: "Quackini_Snackini", price: 93 },
-            { id: "santas_sleigh", name: "Santas Sleigh", wiki: "Santas_Sleigh", price: 93 },
-            { id: "la_secret_combination", name: "La Secret Combination", wiki: "La_Secret_Combination", price: 95 },
-            { id: "celestial_pegasus", name: "Celestial Pegasus", wiki: "Celestial_Pegasus", price: 98 },
-            { id: "scorpino_coaster", name: "Scorpino Coaster", wiki: "Scorpino_Coaster", price: 98 }
-        ];
-
-        // Кейсы с настроенными пулами
-        const CASES = [
-            {
-                id: "starter",
-                name: "Стартовый",
-                price: 22,
-                color: "#00f0ff",
-                glow: "rgba(0, 240, 255, 0.35)",
-                coverWiki: "Esok_Sekolah",
-                pool: BRAINROTS.filter(b => b.price <= 40)
-            },
-            {
-                id: "mid",
-                name: "Неоновый",
-                price: 42,
-                color: "#ff7b00",
-                glow: "rgba(255, 123, 0, 0.35)",
-                coverWiki: "Demon_Head",
-                pool: BRAINROTS.filter(b => b.price >= 29 && b.price <= 69)
-            },
-            {
-                id: "high",
-                name: "Секретный",
-                price: 68,
-                color: "#00ff88",
-                glow: "rgba(0, 255, 136, 0.35)",
-                coverWiki: "La_Secret_Combination",
-                pool: BRAINROTS.filter(b => b.price >= 45)
-            },
-            {
-                id: "all",
-                name: "Все брейнроты",
-                price: 50,
-                color: "#b829ff",
-                glow: "rgba(184, 41, 255, 0.35)",
-                coverWiki: "Celestial_Pegasus",
-                pool: BRAINROTS
-            }
-        ];
-
-        // Кэш рабочих URL картинок с Fandom API (обходим блок hotlink)
-        const imageCache = {};
-
-        function getFallbackSvg(name) {
-            const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-            return data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="%23161924" stroke="%2300f0ff" stroke-width="2"/><text x="50" y="57" font-family="sans-serif" font-size="28" font-weight="bold" fill="%2300f0ff" text-anchor="middle">${initials}</text></svg>;
-        }
-
-        function getImgUrl(item) {
-            if (imageCache[item.id]) return imageCache[item.id];
-            // Прямой редиректор Fandom Special:FilePath (не блокируется CORS/Referer)
-            return https://stealabrainrot.fandom.com/wiki/Special:FilePath/${item.wiki}.png;
-        }
-
-        // Подгружаем точные превью через JSONP/API Fandom в фоне
-        async function preloadWikiImages() {
-            const titles = BRAINROTS.map(b => b.name).join('|');
-            const url = https://stealabrainrot.fandom.com/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=pageimages&format=json&pithumbsize=250&origin=*;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                const pages = data?.query?.pages || {};
-                Object.values(pages).forEach(page => {
-                    if (page.thumbnail?.source) {
-                        const found = BRAINROTS.find(b => b.name.toLowerCase() === page.title.toLowerCase());
-                        if (found) imageCache[found.id] = page.thumbnail.source;
-                    }
-                });
-                renderCases();
-                renderInventory();
-            } catch (e) {
-                // Если API недоступен, работают Special:FilePath ссылки
-            }
-        }
-
-        // СОСТОЯНИЕ ИГРЫlet state = {
-            balance: 250,
-            inventory: [],
-            stakeIndex: null,
-            targetItem: null,
-            pendingDrop: null,
-            isSpinning: false,
-            currentRotation: 0
-        };
-
-        // ЗАГРУЗКА / СОХРАНЕНИЕ
-        function loadState() {
-            try {
-                const saved = JSON.parse(localStorage.getItem('sabgrader_save_v2'));
-                if (saved) {
-                    state.balance = typeof saved.balance === 'number' ? saved.balance : 250;
-                    state.inventory = Array.isArray(saved.inventory) ? saved.inventory : [];
-                }
-            } catch (e) {}
-            updateBalanceUI();
-        }
-
-        function saveState() {
-            try {
-                localStorage.setItem('sabgrader_save_v2', JSON.stringify({
-                    balance: state.balance,
-                    inventory: state.inventory
-                }));
-            } catch (e) {}
-        }
-
-        function updateBalanceUI() {
-            document.getElementById('balance').innerText = state.balance.toLocaleString('ru-RU');
-        }
-
-        function haptic(type) {
-            try {
-                if (tg?.HapticFeedback) {
-                    if (type === 'success' || type === 'error') tg.HapticFeedback.notificationOccurred(type);
-                    else tg.HapticFeedback.impactOccurred(type);
-                }
-            } catch (e) {}
-        }
-
-        // ВКЛАДКИ
-        function switchTab(tab, btn) {
-            if (state.isSpinning) return;
-            haptic('light');
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tab-${tab}).classList.add('active');
-            btn.classList.add('active');
-            if (tab === 'upgrader') drawWheel(getChance());
-        }
-
-        // РЕНДЕР КЕЙСОВ
-        function renderCases() {
-            const grid = document.getElementById('cases-grid');
-            grid.innerHTML = '';
-            CASES.forEach(c => {
-                const coverItem = BRAINROTS.find(b => b.wiki === c.coverWiki) || c.pool[0];
-                const card = document.createElement('div');
-                card.className = 'case-card';
-                card.style.setProperty('--case-color', c.color);
-                card.style.setProperty('--case-glow', c.glow);
-                card.onclick = () => openCase(c.id);
-                card.innerHTML = 
-                    <div class="case-preview">
-                        <img src="${getImgUrl(coverItem)}" onerror="this.onerror=null;this.src='${getFallbackSvg(c.name)}'" alt="">
-                    </div>
-                    <div class="case-title">${c.name}</div>
-                    <div class="case-btn-price">
-                        <span class="coin-icon">B</span>
-                        <span>${c.price}</span>
-                    </div>
-                ;
-                grid.appendChild(card);
-            });
-        }
-
-        // ОТКРЫТИЕ КЕЙСА (ПЛАВНАЯ АНИМАЦИЯ 7 СЕКУНД)
-        function openCase(caseId) {
-            if (state.isSpinning) return;
-            const c = CASES.find(x => x.id === caseId);
-            if (!c) return;
-
-            if (state.balance < c.price) {
-                if (tg?.showAlert) tg.showAlert('Недостаточно монет');
-                else alert('Недостаточно монет');
-                return;
-            }
-
-            state.isSpinning = true;
-            state.balance -= c.price;
-            updateBalanceUI();
-            saveState();
-            haptic('medium');
-
-            const modal = document.getElementById('modal-roulette');
-            const track = document.getElementById('roulette-track');
-            track.innerHTML = '';// Честный взвешенный рандом (дешевле падают чаще, дорогие реже)
-            function pickWeighted(pool) {
-                const weights = pool.map(item => 1 / Math.pow(item.price, 1.15));
-                const total = weights.reduce((a, b) => a + b, 0);
-                let r = Math.random() * total;
-                for (let i = 0; i < pool.length; i++) {
-                    if (r < weights[i]) return pool[i];
-                    r -= weights[i];
-                }
-                return pool[0];
-            }
-
-            const totalCards = 68;
-            const winIndex = 58;
-            const strip = [];
-
-            for (let i = 0; i < totalCards; i++) {
-                const item = pickWeighted(c.pool);
-                strip.push(item);
-                const el = document.createElement('div');
-                el.className = 'roulette-card';
-                el.innerHTML = <img src="${getImgUrl(item)}" onerror="this.onerror=null;this.src='${getFallbackSvg(item.name)}'" alt="">;
-                track.appendChild(el);
-            }
-
-            state.pendingDrop = strip[winIndex];
-
-            // Сброс позиции ДО показа модалки
-            track.style.transition = 'none';
-            track.style.transform = 'translate3d(0px, 0px, 0px)';
-            modal.classList.add('active');
-
-            // Принудительный reflow браузера, чтобы анимация гарантированно запустилась
-            void track.offsetWidth;
-
-            const cardStep = 120; // 112px ширина + 8px margin
-            const viewportWidth = document.querySelector('.roulette-viewport').offsetWidth;
-            const centerOffset = (viewportWidth / 2) - (cardStep / 2);
-            // Случайный недолет/перелет внутри карточки (от -42 до +42 px)
-            const randomJitter = (Math.random() - 0.5) * 84;
-            const finalX = (winIndex * cardStep) - centerOffset + randomJitter;
-
-            requestAnimationFrame(() => {
-                track.style.transition = 'transform 7s cubic-bezier(0.08, 0.85, 0.14, 1)';
-                track.style.transform = translate3d(-${finalX}px, 0px, 0px);
-            });
-
-            setTimeout(() => {
-                modal.classList.remove('active');
-                state.isSpinning = false;
-                showDropModal(state.pendingDrop);
-            }, 7150);
-        }
-
-        function showDropModal(item) {
-            haptic('success');
-            document.getElementById('res-img').src = getImgUrl(item);
-            document.getElementById('res-img').onerror = function() {
-                this.onerror = null;
-                this.src = getFallbackSvg(item.name);
-            };
-            document.getElementById('res-name').innerText = item.name;
-            document.getElementById('res-price').innerText = item.price;
-            document.getElementById('btn-sell-drop').innerText = Продать за ${item.price};
-            document.getElementById('modal-result').classList.add('active');
-        }
-
-        function resolveDrop(action) {
-            haptic('light');
-            document.getElementById('modal-result').classList.remove('active');
-            const item = state.pendingDrop;
-            if (!item) return;
-
-            if (action === 'sell') {
-                state.balance += item.price;
-                updateBalanceUI();
-            } else {
-                state.inventory.push(item);
-                renderInventory();
-            }
-            state.pendingDrop = null;
-            saveState();
-        }
-
-        // ИНВЕНТАРЬ
-        function renderInventory() {
-            const grid = document.getElementById('inv-grid');
-            grid.innerHTML = '';
-
-            if (state.inventory.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px;">Инвентарь пуст</div>';
-                return;
-                    }state.inventory.forEach((item, idx) => {
-                const card = document.createElement('div');
-                card.className = 'inv-card';
-                card.innerHTML = 
-                    <img src="${getImgUrl(item)}" onerror="this.onerror=null;this.src='${getFallbackSvg(item.name)}'" alt="">
-                    <div class="inv-name">${item.name}</div>
-                    <div class="inv-price"><span class="coin-icon">B</span>${item.price}</div>
-                    <button class="btn-inv-sell" onclick="sellInventoryItem(${idx})">Продать за ${item.price}</button>
-                ;
-                grid.appendChild(card);
-            });
-        }
-
-        function sellInventoryItem(idx) {
-            if (state.isSpinning) return;
-            haptic('light');
-            const item = state.inventory[idx];
-            if (!item) return;
-            state.balance += item.price;
-            state.inventory.splice(idx, 1);
-
-            if (state.stakeIndex === idx) {
-                resetUpgraderSlots();
-            } else if (state.stakeIndex !== null && state.stakeIndex > idx) {
-                state.stakeIndex--;
-            }
-
-            updateBalanceUI();
-            renderInventory();
-            saveState();
-        }
-
-        // АПГРЕЙДЕР (CANVAS ШКАЛА КАК НА СКРИНШОТАХ)
-        function drawWheel(chancePercent, accentColor = '#ff7b00') {
-            const canvas = document.getElementById('upgrader-canvas');
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width;
-            const h = canvas.height;
-            const cx = w / 2;
-            const cy = h / 2;
-
-            ctx.clearRect(0, 0, w, h);
-
-            // 1. Внешняя шкала делений (риски по кругу)
-            const tickRadiusOuter = 296;
-            const totalTicks = 72;
-            for (let i = 0; i < totalTicks; i++) {
-                const angle = (i / totalTicks) * Math.PI * 2 - Math.PI / 2;
-                const isMajor = i % 18 === 0;
-                const len = isMajor ? 18 : 10;
-                ctx.beginPath();
-                ctx.moveTo(cx + Math.cos(angle) * (tickRadiusOuter - len), cy + Math.sin(angle) * (tickRadiusOuter - len));
-                ctx.lineTo(cx + Math.cos(angle) * tickRadiusOuter, cy + Math.sin(angle) * tickRadiusOuter);
-                ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)';
-                ctx.lineWidth = isMajor ? 3 : 2;
-                ctx.stroke();
-            }
-
-            // 2. Темное кольцо трека
-            const ringRadius = 232;
-            const ringWidth = 54;
-            ctx.beginPath();
-            ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = '#12151f';
-            ctx.lineWidth = ringWidth;
-            ctx.stroke();
-
-            // 3. Неоновый сектор выигрыша (начинается сверху, от -90 deg по часовой стрелке)
-            if (chancePercent > 0) {
-                const startAngle = -Math.PI / 2;
-                const sweepAngle = (chancePercent / 100) * Math.PI * 2;
-                const endAngle = startAngle + sweepAngle;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(cx, cy, ringRadius, startAngle, endAngle);
-                ctx.strokeStyle = accentColor;
-                ctx.lineWidth = ringWidth;
-                ctx.shadowColor = accentColor;
-                ctx.shadowBlur = 24;
-                ctx.stroke();
-                ctx.restore();
-            }
-
-            // 4. Внутренний и внешний ободки кольца
-            ctx.beginPath();
-            ctx.arc(cx, cy, ringRadius + ringWidth / 2, 0, Math.PI * 2);
-            ctx.strokeStyle = '#252a3d';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(cx, cy, ringRadius - ringWidth / 2, 0, Math.PI * 2);
-            ctx.strokeStyle = '#252a3d';
-            ctx.lineWidth = 2;
-            ctx.stroke();// 5. Подписи процентов 0% / 50% / 100% на кольце
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-            ctx.font = '700 18px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('0%', cx, cy - ringRadius);
-            ctx.fillText('50%', cx, cy + ringRadius);
-            ctx.fillText('25%', cx + ringRadius, cy);
-            ctx.fillText('75%', cx - ringRadius, cy);
-        }
-
-        function getChance() {
-            if (state.stakeIndex === null || !state.targetItem) return 0;
-            const stake = state.inventory[state.stakeIndex];
-            if (!stake) return 0;
-            const raw = (stake.price / state.targetItem.price) * 100;
-            return Math.max(1, Math.min(85, Number(raw.toFixed(2))));
-        }
-
-        function updateUpgraderUI() {
-            const stakeSlot = document.getElementById('slot-stake');
-            const targetSlot = document.getElementById('slot-target');
-            const percentEl = document.getElementById('upg-percent');
-            const statusEl = document.getElementById('upg-status');
-            const btn = document.getElementById('upg-btn');
-
-            if (state.stakeIndex !== null && state.inventory[state.stakeIndex]) {
-                const s = state.inventory[state.stakeIndex];
-                stakeSlot.classList.add('filled');
-                stakeSlot.innerHTML = 
-                    <img src="${getImgUrl(s)}" onerror="this.onerror=null;this.src='${getFallbackSvg(s.name)}'" alt="">
-                    <div class="upg-slot-name">${s.name}</div>
-                    <div class="upg-slot-price"><span class="coin-icon">B</span>${s.price}</div>
-                ;
-            } else {
-                stakeSlot.classList.remove('filled');
-                stakeSlot.innerHTML = '<div class="upg-slot-label">Ваша ставка</div>';
-            }
-
-            if (state.targetItem) {
-                const t = state.targetItem;
-                targetSlot.classList.add('filled');
-                targetSlot.innerHTML = 
-                    <img src="${getImgUrl(t)}" onerror="this.onerror=null;this.src='${getFallbackSvg(t.name)}'" alt="">
-                    <div class="upg-slot-name">${t.name}</div>
-                    <div class="upg-slot-price"><span class="coin-icon">B</span>${t.price}</div>
-                ;
-            } else {
-                targetSlot.classList.remove('filled');
-                targetSlot.innerHTML = '<div class="upg-slot-label">Желаемый предмет</div>';
-            }
-
-            const chance = getChance();
-            percentEl.innerText = chance.toFixed(2) + '%';
-            percentEl.style.color = '#fff';
-            percentEl.style.textShadow = '0 0 18px rgba(255,255,255,0.35)';
-
-            if (chance > 0) {
-                statusEl.innerText = chance < 25 ? 'НИЗКИЙ ШАНС' : chance < 55 ? 'СРЕДНИЙ ШАНС' : 'ВЫСОКИЙ ШАНС';
-                statusEl.style.color = '#ff9d3b';
-                btn.disabled = false;
-            } else {
-                statusEl.innerText = 'ВЫБЕРИТЕ ПРЕДМЕТЫ';
-                statusEl.style.color = 'var(--muted)';
-                btn.disabled = true;
-            }
-
-            drawWheel(chance, '#ff7b00');
-        }
-
-        function resetUpgraderSlots() {
-            state.stakeIndex = null;
-            state.targetItem = null;
-            updateUpgraderUI();
-        }
-
-        function openSelector(type) {
-            if (state.isSpinning) return;
-            haptic('light');
-
-            const listEl = document.getElementById('selector-list');
-            const titleEl = document.getElementById('selector-title');
-            listEl.innerHTML = '';
-
-            if (type === 'stake') {
-                if (state.inventory.length === 0) {
-                    if (tg?.showAlert) tg.showAlert('Сначала выбейте предмет из кейса');
-                    else alert('Сначала выбейте предмет из кейса');
-                    return;
-                }
-                titleEl.innerText = 'Выберите ставку';
-                state.inventory.forEach((item, idx) => {
-                    const row = document.createElement('div');
-                    row.className = 'selector-row';
-                    row.onclick = () => {
-                        state.stakeIndex = idx;
-                        if (state.targetItem && state.targetItem.price <= item.price) {
-                            state.targetItem = null;
-                        }
-                        closeSelector();
-                        updateUpgraderUI();
-                    };
-                    row.innerHTML = 
-                        <img src="${getImgUrl(item)}" onerror="this.onerror=null;this.src='${getFallbackSvg(item.name)}'" alt="">
-                        <div>
-                            <div class="selector-row-name">${item.name}</div>
-                            <div class="selector-row-price"><span class="coin-icon">B</span>${item.price}</div>
-                        </div>
-                    ;
-                    listEl.appendChild(row);
-                });
-            } else {
-                if (state.stakeIndex === null || !state.inventory[state.stakeIndex]) {
-                    if (tg?.showAlert) tg.showAlert('Сначала выберите свою ставку');
-                    else alert('Сначала выберите свою ставку');
-                    return;
-                }
-                const stakePrice = state.inventory[state.stakeIndex].price;
-                const targets = BRAINROTS.filter(b => b.price > stakePrice);
-                if (targets.length === 0) {
-                    if (tg?.showAlert) tg.showAlert('У вас уже максимальный предмет');
-                    else alert('У вас уже максимальный предмет');
-                    return;
-                }
-                titleEl.innerText = 'Выберите цель';
-                targets.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'selector-row';
-                    row.onclick = () => {
-                        state.targetItem = item;
-                        closeSelector();
-                        updateUpgraderUI();
-                    };
-                    row.innerHTML = 
-                        <img src="${getImgUrl(item)}" onerror="this.onerror=null;this.src='${getFallbackSvg(item.name)}'" alt="">
-                        <div>
-                            <div class="selector-row-name">${item.name}</div>
-                            <div class="selector-row-price"><span class="coin-icon">B</span>${item.price}</div>
-                        </div>
-                    ;
-                    listEl.appendChild(row);
-                });
-            }
-
-            document.getElementById('modal-selector').classList.add('active');
-        }
-
-        function closeSelector() {
-            document.getElementById('modal-selector').classList.remove('active');
-        }
-        // ЗАПУСК АПГРЕЙДЕРА (ПЛАВНЫЙ БЕГ УКАЗАТЕЛЯ ПО КОНТУРУ)
-        function spinUpgrader() {
-            if (state.isSpinning  state.stakeIndex === null  !state.targetItem) return;
-
-            const chance = getChance();
-            if (chance <= 0) return;
-
-            state.isSpinning = true;
-            haptic('medium');
-
-            const btn = document.getElementById('upg-btn');
-            const statusEl = document.getElementById('upg-status');
-            const percentEl = document.getElementById('upg-percent');
-            const orbit = document.getElementById('pointer-orbit');
-
-            btn.disabled = true;
-            statusEl.innerText = 'ВРАЩЕНИЕ';
-            statusEl.style.color = 'var(--cyan)';
-
-            // Честный рандом от 0 до 100 (с точностью до 0.01%)
-            const roll = Math.random() * 100;
-            const isWin = roll < chance;
-
-            // Сектор выигрыша находится от 0 deg до (chance * 3.6) deg по часовой стрелке от верха (12 часов)
-            const winSectorDeg = (chance / 100) * 360;
-            let landingDeg = 0;
-
-            if (isWin) {
-                // Попадание внутрь оранжевого сектора с небольшим отступом от границ
-                const pad = Math.min(2, winSectorDeg * 0.15);
-                landingDeg = pad + Math.random() * Math.max(0.5, winSectorDeg - pad * 2);
-            } else {
-                // Проигрыш — попадание в пустую зону от winSectorDeg до 360 deg
-                const loseZone = 360 - winSectorDeg;
-                const pad = Math.min(3, loseZone * 0.1);
-                landingDeg = winSectorDeg + pad + Math.random() * Math.max(1, loseZone - pad * 2);
-            }
-
-            // Добавляем 6 полных оборотов к текущему углу для плавного разгона и длинного торможения
-            const baseTurns = Math.floor(state.currentRotation / 360) * 360 + 360 * 6;
-            const targetRotation = baseTurns + landingDeg;
-            state.currentRotation = targetRotation;
-
-            orbit.style.transition = 'transform 5.5s cubic-bezier(0.08, 0.85, 0.12, 1)';
-            orbit.style.transform = rotate(${targetRotation}deg);
-
-            setTimeout(() => {
-                if (isWin) {
-                    haptic('success');
-                    percentEl.style.color = 'var(--green)';
-                    percentEl.style.textShadow = '0 0 20px rgba(0, 255, 136, 0.6)';
-                    statusEl.innerText = 'УСПЕШНЫЙ АПГРЕЙД';
-                    statusEl.style.color = 'var(--green)';
-                    drawWheel(chance, '#00ff88');
-
-                    // Заменяем ставку на выигранный предмет
-                    state.inventory.splice(state.stakeIndex, 1, state.targetItem);
-                } else {
-                    haptic('error');
-                    percentEl.style.color = 'var(--red)';
-                    percentEl.style.textShadow = '0 0 20px rgba(255, 42, 85, 0.6)';
-                    statusEl.innerText = 'ПРОИГРЫШ';
-                    statusEl.style.color = 'var(--red)';
-                    drawWheel(chance, '#ff2a55');
-
-                    // Удаляем ставку
-                    state.inventory.splice(state.stakeIndex, 1);
-                }
-
-                renderInventory();
-                saveState();
-
-                setTimeout(() => {
-                    state.isSpinning = false;
-                    resetUpgraderSlots();
-                }, 1400);
-
-            }, 5600);
-        }
-
-        // СТАРТ
-        loadState();
-        renderCases();
-        renderInventory();
-        drawWheel(0);
-        preloadWikiImages();
-    </script>
-</body>
-</html>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.expand(); tg.setHeaderColor('#0b0e16'); tg.setBackgroundColor('#07080d'); }
+
+    const ITEMS = [
+      { id: "esok_sekolah", name: "Esok Sekolah", wiki: "Esok_Sekolah", price: 17 },
+      { id: "agarini_la_palini", name: "Agarini La Palini", wiki: "Agarini_La_Palini", price: 23 },
+      { id: "abbysaloco", name: "Abbysaloco", wiki: "Abbysaloco", price: 23 },
+      { id: "los_mobills", name: "Los Mobills", wiki: "Los_Mobills", price: 24 },
+      { id: "rainbow_slap", name: "Rainbow Slap", wiki: "Rainbow_Slap", price: 24 },
+      { id: "los_burritos", name: "Los Burritos", wiki: "Los_Burritos", price: 25 },
+      { id: "los_puggles", name: "Los Puggles", wiki: "Los_Puggles", price: 29 },
+      { id: "orcaledon", name: "Orcaledon", wiki: "Orcaledon", price: 30 },
+      { id: "ketupat_kepat", name: "Ketupat Kepat", wiki: "Ketupat_Kepat", price: 30 },
+      { id: "mieteteira", name: "Mieteteira Bicicleteira", wiki: "Mieteteira_Bicicleteira", price: 30 },
+      { id: "los_candies", name: "Los Candies", wiki: "Los_Candies", price: 32 },
+      { id: "demon_head", name: "Demon Head", wiki: "Demon_Head", price: 32 },
+      { id: "lavadorito", name: "Lavadorito Spinito", wiki: "Lavadorito_Spinito", price: 33 },
+      { id: "crystal_slap", name: "Crystal Slap", wiki: "Crystal_Slap", price: 33 },
+      { id: "ying_yang_lamp", name: "Ying Yang Lamp", wiki: "Ying_Yang_Lamp", price: 34 },
+      { id: "bloodmoon_slap", name: "Bloodmoon Slap", wiki: "Bloodmoon_Slap", price: 35 },
+      { id: "cupid_wings", name: "Cupid Wings", wiki: "Cupid_Wings", price: 36 },
+      { id: "los_tangcitos", name: "Los Tangcitos", wiki: "Los_Tangcitos", price: 36 },
+      { id: "waverider", name: "Waverider", wiki: "Waverider", price: 37 },
+      { id: "witch_broom", name: "Witch Broom", wiki: "Witch_Broom", price: 40 },
+      { id: "blackhole_bomb", name: "Blackhole Bomb", wiki: "Blackhole_Bomb", price: 40 },
+      { id: "mi_gatito", name: "Mi Gatito", wiki: "Mi_Gatito", price: 41 },
+      { id: "camera_ramen", name: "Camera Ramen", wiki: "Camera_Ramen", price: 41 },
+      { id: "ventollero", name: "Ventollero Pavon", wiki: "Ventollero_Pavon", price: 44 },
+      { id: "yes_my_examine", name: "Yes My Examine", wiki: "Yes_My_Examine", price: 44 },
+      { id: "los_primos", name: "Los Primos", wiki: "Los_Primos", price: 45 },
+      { id: "air_strike", name: "Air Strike", wiki: "Air_Strike", price: 45 },
+      { id: "candy_sentry", name: "Candy Sentry", wiki: "Candy_Sentry", price: 46 },
+      { id: "los_planitos", name: "Los Planitos", wiki: "Los_Planitos", price: 49 },
+      { id: "la_summer_grande", name: "La Summer Grande", wiki: "La_Summer_Grande", price: 49 },
+      { id: "honey_honey_bear", name: "Honey Honey Bear", wiki: "Honey_Honey_Bear", price: 51 },
+      { id: "garama", name: "Garama and Madundung", wiki: "Garama_and_Madundung", price: 54 },
+      { id: "ketchuru", name: "Ketchuru and Musturu", wiki: "Ketchuru_and_Musturu", price: 54 },
+      { id: "quesadilo", name: "Quesadilo Vampiro", wiki: "Quesadilo_Vampiro", price: 55 },
+      { id: "cash_or_card", name: "Cash or Card", wiki: "Cash_or_Card", price: 56 },
+      { id: "noodle_noodle", name: "Noodle Noodle P", wiki: "Noodle_Noodle", price: 57 },
+      { id: "phantom_slap", name: "Phantom Slap", wiki: "Phantom_Slap", price: 60 },
+      { id: "la_jolly_grande", name: "La Jolly Grande", wiki: "La_Jolly_Grande", price: 69 },
+      { id: "sammyni_fattini", name: "Sammyni Fattini", wiki: "Sammyni_Fattini", price: 74 },
+      { id: "eviledon", name: "Eviledon", wiki: "Eviledon", price: 75 },
+      { id: "w_or_l", name: "W or L", wiki: "W_or_L", price: 78 },
+      { id: "lava_blaster", name: "Lava Blaster", wiki: "Lava_Blaster", price: 80 },
+      { id: "los_tictacs", name: "Los Tictacs", wiki: "Los_Tictacs", price: 82 },
+      { id: "los_sweethearts", name: "Los Sweethearts", wiki: "Los_Sweethearts", price: 84 },
+      { id: "john_doe", name: "John Doe", wiki: "John_Doe", price: 84 },
+      { id: "pizza_and_ranch", name: "Pizza and Ranch", wiki: "Pizza_and_Ranch", price: 84 },
+      { id: "los_jolly_comb", name: "Los Jolly Combination", wiki: "Los_Jolly_Combination", price: 91 },
+      { id: "popcuru", name: "Popcuru and Fizzuru", wiki: "Popcuru_and_Fizzuru", price: 92 },
+      { id: "los_mariachis", name: "Los Mariachis", wiki: "Los_Mariachis", price: 92 },
+      { id: "quackini", name: "Quackini Snackini", wiki: "Quackini_Snackini", price: 93 },
+      { id: "santas_sleigh", name: "Santas Sleigh", wiki: "Santas_Sleigh", price: 93 },
+      { id: "la_secret_comb", name: "La Secret Combination", wiki: "La_Secret_Combination", price: 95 },
+      { id: "celestial_pegasus", name: "Celestial Pegasus", wiki: "Celestial_Pegasus", price: 98 },
+      { id: "scorpino_coaster", name: "Scorpino Coaster", wiki: "Scorpino_Coaster", price: 98 }
+    ];
+
+    const CASES = [
+      { id: "c1", name: "Базовый", price: 22, cover: "Esok_Sekolah", pool: ITEMS.filter(i => i.price <= 40) },
+      { id: "c2", name: "Неоновый", price: 42, cover: "Demon_Head", pool: ITEMS.filter(i => i.price >= 29 && i.price <= 69) },
+      { id: "c3", name: "Секретный", price: 68, cover: "La_Secret_Combination", pool: ITEMS.filter(i => i.price >= 45) },
+      { id: "c4", name: "Полный", price: 50, cover: "Celestial_Pegasus", pool: ITEMS }
+    ];
+
+    const wikiThumbs = {};
+    const fallbackImg = (name) => {
+      const code = name.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || 'BR';
+      return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="16" fill="%23151926" stroke="%2300f0ff" stroke-width="2"/><text x="48" y="55" font-family="sans-serif" font-size="26" font-weight="bold" fill="%2300f0ff" text-anchor="middle">${code}</text></svg>`;
+    };
+    const imgSrc = (item) => wikiThumbs[item.id] || `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${item.wiki}.

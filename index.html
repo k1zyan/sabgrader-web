@@ -7,244 +7,363 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #0f0f11;
-            --panel-color: #1a1a1e;
-            --gold: #e5b83b;
+            --bg: #0b0b0e;
+            --panel: #16161a;
+            --panel-light: #202025;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --gold: #fbbf24;
             --text: #ffffff;
-            --text-muted: #888888;
-            --btn-blue: #2ea6ff;
-            --border: #2a2a30;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #27272a;
         }
-        
-        * { box-sizing: border-box; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
         body {
-            margin: 0; padding: 0; background: var(--bg-color); color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-            user-select: none;
+            background-color: var(--bg); color: var(--text);
+            height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden; user-select: none; -webkit-user-select: none;
         }
-        
-        /* Шапка */
+
+        /* Header */
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; background: var(--panel-color);
-            border-bottom: 1px solid var(--border); font-weight: 600; font-size: 18px;
+            padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+            z-index: 10;
         }
-        
-        .balance { 
-            color: var(--gold); display: flex; align-items: center; gap: 8px; 
-            background: rgba(229, 184, 59, 0.1); padding: 5px 12px; border-radius: 20px;
+        .logo { font-weight: 800; font-size: 18px; letter-spacing: 0.5px; }
+        .balance {
+            background: rgba(251, 191, 36, 0.1); padding: 6px 12px; border-radius: 20px;
+            display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px;
         }
-        
-        /* Иконка монеты (заглушка, потом заменишь на свою) */
-        .coin-icon { width: 20px; height: 20px; background: var(--gold); border-radius: 50%; }
+        .coin-svg { width: 16px; height: 16px; fill: var(--gold); }
 
-        /* Контент */
-        .content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 90px; }
-        .tab { display: none; }
-        .tab.active { display: block; }
-        
-        h2 { font-size: 22px; margin-top: 0; margin-bottom: 20px; font-weight: 700; }
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+        .tab-pane { display: none; animation: fadeIn 0.2s ease-out; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Сетка кейсов */
-        .cases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
+        /* Cases Grid */
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+        .cases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .case-card {
-            background: var(--panel-color); border-radius: 16px; padding: 12px;
-            text-align: center; border: 1px solid var(--border); transition: transform 0.1s;
-            display: flex; flex-direction: column;
+            background: var(--panel); border-radius: 16px; padding: 12px;
+            border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center;
+            transition: transform 0.1s, background 0.2s; cursor: pointer;
         }
-        .case-card:active { transform: scale(0.97); }
-        
-        /* Место под твою картинку кейса */
-        .case-img { 
-            width: 100%; height: 120px; background: #25252b; border-radius: 12px; 
-            margin-bottom: 12px; object-fit: cover;
+        .case-card:active { transform: scale(0.96); background: var(--panel-light); }
+        .case-img-placeholder {
+            width: 100%; aspect-ratio: 1; background: var(--panel-light); border-radius: 12px;
+            margin-bottom: 12px; display: flex; justify-content: center; align-items: center;
+            color: var(--text-muted); font-size: 12px; border: 1px dashed var(--border);
         }
-        
-        .case-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-        .case-price { color: var(--gold); font-size: 14px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .case-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        .case-price { display: flex; align-items: center; gap: 4px; color: var(--gold); font-weight: 700; font-size: 14px; }
 
-        /* Апгрейдер */
-        .upgrader-container {
-            display: flex; flex-direction: column; align-items: center; margin-top: 30px;
+        /* Upgrader */
+        .upgrader-wrap { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        .wheel-container { position: relative; width: 280px; height: 280px; margin-bottom: 40px; }
+        
+        /* Стрелка (неподвижная) */
+        .wheel-arrow {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent;
+            border-top: 24px solid var(--text); z-index: 5; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
         }
-        
-        .wheel-wrapper { position: relative; width: 260px; height: 260px; margin-bottom: 30px; }
-        
-        .wheel-container {
-            width: 100%; height: 100%; border-radius: 50%; position: relative;
-            background: conic-gradient(#ff4444 0deg 180deg, #4444ff 180deg 360deg);
-            border: 10px solid #25252b; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+
+        /* Колесо (крутится) */
+        .wheel {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: conic-gradient(
+                var(--danger) 0deg 180deg, 
+                var(--accent) 180deg 360deg
+            );
+            border: 8px solid var(--panel);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
             display: flex; justify-content: center; align-items: center;
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+            transform: rotate(0deg);
         }
-        
-        .wheel-center {
-            width: 210px; height: 210px; background: var(--panel-color);
-            border-radius: 50%; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 2;
-            border: 4px solid #111;
+
+        .wheel-inner {
+            width: 210px; height: 210px; background: var(--bg); border-radius: 50%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border: 4px solid var(--panel); z-index: 2; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
-        
-        .wheel-text { font-size: 32px; font-weight: 800; margin-bottom: 5px; }
-        .wheel-chance { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        
-        .pointer {
-            width: 0; height: 0; border-left: 16px solid transparent;
-            border-right: 16px solid transparent; border-bottom: 28px solid #fff;
-            position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 3;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-        }
-        
-        .action-panel {
-            width: 100%; background: var(--panel-color); border-radius: 16px; padding: 20px;
+        .upg-percent { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+        .upg-status { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+
+        .upg-panel {
+            width: 100%; background: var(--panel); border-radius: 16px; padding: 20px;
             border: 1px solid var(--border); text-align: center;
         }
-        
-        .btn {
-            background: var(--btn-blue); color: white; border: none; padding: 16px;
-            border-radius: 12px; font-size: 16px; font-weight: 600; width: 100%;
-            margin-top: 15px; transition: 0.2s; cursor: pointer;
+        .upg-item-slot {
+            background: var(--panel-light); border-radius: 12px; height: 60px;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 16px; color: var(--text-muted); font-size: 14px;
         }
-        .btn:active { background: #1c8cd9; transform: scale(0.98); }
-        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .btn-primary {
+            background: var(--accent); color: #fff; border: none; border-radius: 12px;
+            padding: 16px; width: 100%; font-size: 16px; font-weight: 700;
+            transition: 0.2s; cursor: pointer;
+        }
+        .btn-primary:active { background: var(--accent-hover); transform: scale(0.98); }
+        .btn-primary:disabled { background: var(--panel-light); color: var(--text-muted); cursor: not-allowed; }
 
-        /* Нижнее меню */
+        /* Bottom Nav */
         .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; background: var(--panel-color);
-            display: flex; justify-content: space-around; padding: 15px 0;
-            border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 15px);
+            position: fixed; bottom: 0; width: 100%; background: var(--panel);
+            display: flex; justify-content: space-around; padding: 12px 0;
+            border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 12px);
+            z-index: 10;
         }
-        .nav-item {
-            color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; 
-            transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+        .nav-btn {
+            background: none; border: none; color: var(--text-muted); font-size: 14px;
+            font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: 0.2s;
         }
-        .nav-item.active { color: var(--gold); }
+        .nav-btn.active { color: var(--text); background: var(--panel-light); }
+
+        /* Modal for Case Opening */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            flex-direction: column; opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .roulette-container {
+            width: 100%; height: 120px; background: var(--panel);
+            border-top: 2px solid var(--border); border-bottom: 2px solid var(--border);
+            position: relative; overflow: hidden; margin-bottom: 30px;
+        }
+        .roulette-line {
+            position: absolute; top: 0; left: 50%; width: 2px; height: 100%;
+            background: var(--gold); transform: translateX(-50%); z-index: 2;
+            box-shadow: 0 0 10px var(--gold);
+        }
+        .roulette-track {
+            display: flex; align-items: center; height: 100%; padding-left: 50%;
+            transition: transform 5s cubic-bezier(0.1, 1, 0.1, 1);
+        }
+        .roulette-item {
+            min-width: 100px; height: 100px; background: var(--panel-light);
+            margin: 0 10px; border-radius: 12px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            flex-shrink: 0; font-size: 12px; font-weight: 600; padding: 10px; text-align: center;
+        }
+        .btn-close {
+            background: var(--panel-light); color: #fff; border: none; padding: 12px 24px;
+            border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Шапка -->
     <div class="header">
-        <div>SABgrader</div>
+        <div class="logo">SABgrader</div>
         <div class="balance">
-            <div class="coin-icon"></div>
+            <svg class="coin-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
             <span id="balance">0</span>
         </div>
     </div>
 
-    <!-- Контент -->
-    <div class="content">
-        
-        <!-- Вкладка Кейсы -->
-        <div id="tab-cases" class="tab active">
-            <h2>Кейсы</h2>
+    <div class="main-content">
+        <!-- CASES TAB -->
+        <div id="tab-cases" class="tab-pane active">
+            <div class="section-title">Кейсы</div>
             <div class="cases-grid">
-                
-                <!-- Кейс 1 -->
-                <div class="case-card" onclick="openCase('dls')">
-                    <img src="" alt="DLS" class="case-img">
-                    <div class="case-title">ДЛС</div>
-                    <div class="case-price"><div class="coin-icon" style="width:14px; height:14px;"></div> 229</div>
+                <div class="case-card" onclick="openCaseModal('ДЛС', 229)">
+                    <div class="case-img-placeholder">Ваша картинка</div>
+                    <div class="case-name">ДЛС</div>
+                    <div class="case-price">
+                        <svg class="coin-svg" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        229
+                    </div>
                 </div>
-                
-                <!-- Кейс 2 -->
-                <div class="case-card" onclick="openCase('standard')">
-                    <img src="" alt="Базовый" class="case-img">
-                    <div class="case-title">Базовый</div>
-                    <div class="case-price"><div class="coin-icon" style="width:14px; height:14px;"></div> 9</div>
+                <div class="case-card" onclick="openCaseModal('Базовый', 9)">
+                    <div class="case-img-placeholder">Ваша картинка</div>
+                    <div class="case-name">Базовый</div>
+                    <div class="case-price">
+                        <svg class="coin-svg" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        9
+                    </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- Вкладка Апгрейдер -->
-        <div id="tab-upgrader" class="tab">
-            <h2>Апгрейдер</h2>
-            <div class="upgrader-container">
-                <div class="wheel-wrapper">
-                    <div class="pointer"></div>
-                    <div class="wheel-container" id="wheel">
-                        <div class="wheel-center">
-                            <div class="wheel-text" id="upg-text">50%</div>
-                            <div class="wheel-chance" id="upg-status">ШАНС</div>
+        <!-- UPGRADER TAB -->
+        <div id="tab-upgrader" class="tab-pane">
+            <div class="section-title">Апгрейдер</div>
+            <div class="upgrader-wrap">
+                <div class="wheel-container">
+                    <div class="wheel-arrow"></div>
+                    <div class="wheel" id="upg-wheel">
+                        <div class="wheel-inner">
+                            <div class="upg-percent" id="upg-percent">50%</div>
+                            <div class="upg-status" id="upg-status">ШАНС</div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="action-panel">
-                    <div style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
-                        Предмет не выбран
-                    </div>
-                    <button class="btn" id="upg-btn" onclick="upgradeItem()">Улучшить</button>
+                <div class="upg-panel">
+                    <div class="upg-item-slot">Предмет не выбран</div>
+                    <button class="btn-primary" id="upg-btn" onclick="spinUpgrader()">Улучшить</button>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- Нижнее меню -->
+    <!-- BOTTOM NAV -->
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('cases', this)">Кейсы</div>
-        <div class="nav-item" onclick="switchTab('upgrader', this)">Апгрейд</div>
-        <div class="nav-item" onclick="switchTab('profile', this)">Профиль</div>
+        <button class="nav-btn active" onclick="switchTab('cases', this)">Кейсы</button>
+        <button class="nav-btn" onclick="switchTab('upgrader', this)">Апгрейд</button>
+        <button class="nav-btn" onclick="switchTab('profile', this)">Профиль</button>
+    </div>
+
+    <!-- MODAL FOR CASE ROULETTE -->
+    <div class="modal-overlay" id="case-modal">
+        <div class="roulette-container">
+            <div class="roulette-line"></div>
+            <div class="roulette-track" id="roulette-track">
+                <!-- Предметы будут добавлены через JS -->
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeCaseModal()">Закрыть</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); 
-        tg.setHeaderColor('#1a1a1e'); 
-        tg.setBackgroundColor('#0f0f11');
+        tg.expand();
+        tg.setHeaderColor('#16161a');
+        tg.setBackgroundColor('#0b0b0e');
 
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        // Haptic feedback helper
+        function haptic(type = 'light') {
+            if (tg.HapticFeedback) {
+                if (type === 'light') tg.HapticFeedback.impactOccurred('light');
+                if (type === 'medium') tg.HapticFeedback.impactOccurred('medium');
+                if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+                if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        // Навигация
+        function switchTab(tabId, btn) {
+            haptic('light');
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // === ЛОГИКА АПГРЕЙДЕРА ===
+        let isUpgrading = false;
+        
+        function spinUpgrader() {
+            if (isUpgrading) return;
+            isUpgrading = true;
             
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            element.classList.add('active');
-        }
-
-        function openCase(caseId) {
-            tg.showAlert(`Открытие ${caseId}...`);
-            // В будущем здесь будет отправка данных боту
-            // tg.sendData(JSON.stringify({ action: 'open_case', case_id: caseId }));
-        }
-
-        function upgradeItem() {
             const btn = document.getElementById('upg-btn');
-            const textEl = document.getElementById('upg-text');
-            const statusEl = document.getElementById('upg-status');
-            const wheel = document.getElementById('wheel');
+            const wheel = document.getElementById('upg-wheel');
+            const percentText = document.getElementById('upg-percent');
+            const statusText = document.getElementById('upg-status');
             
             btn.disabled = true;
-            statusEl.innerText = "ВРАЩЕНИЕ...";
+            statusText.innerText = "ВРАЩЕНИЕ";
+            statusText.style.color = "var(--text-muted)";
+            haptic('medium');
+
+            // Рандомим шанс от 5% до 95%
+            const winChance = Math.floor(Math.random() * 90) + 5; 
             
-            // Эмуляция анимации
-            let counter = 0;
-            const interval = setInterval(() => {
-                textEl.innerText = Math.floor(Math.random() * 100) + "%";
-                // Крутим фон
-                wheel.style.transform = `rotate(${counter * 45}deg)`;
-                counter++;
-                
-                if (counter > 15) {
-                    clearInterval(interval);
-                    const finalChance = Math.floor(Math.random() * 100);
-                    textEl.innerText = finalChance + "%";
-                    
-                    if (finalChance > 50) {
-                        statusEl.innerText = "УСПЕХ";
-                        statusEl.style.color = "#4dff4d";
-                    } else {
-                        statusEl.innerText = "ПРОИГРЫШ";
-                        statusEl.style.color = "#ff4d4d";
-                    }
-                    
-                    btn.disabled = false;
+            // Вычисляем угол: 360 градусов = 100%. 
+            // Наш красный сектор (проигрыш) идет от 0 до 180 градусов.
+            // Синий (успех) от 180 до 360.
+            // Если шанс > 50, стрелка должна упасть в синюю зону.
+            
+            let targetAngle = 0;
+            if (winChance > 50) {
+                // Успех. Угол от 180 до 360.
+                targetAngle = 180 + (winChance - 50) * (180 / 50);
+            } else {
+                // Проигрыш. Угол от 0 до 180.
+                targetAngle = winChance * (180 / 50);
+            }
+
+            // Добавляем обороты (минимум 3 полных круга = 1080 градусов)
+            const totalRotation = 1080 + (360 - targetAngle); 
+            
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+            // Ждем окончания анимации (4 секунды как в CSS)
+            setTimeout(() => {
+                percentText.innerText = winChance + "%";
+                if (winChance > 50) {
+                    statusText.innerText = "УСПЕХ";
+                    statusText.style.color = "var(--success)";
+                    haptic('success');
+                } else {
+                    statusText.innerText = "ПРОИГРЫШ";
+                    statusText.style.color = "var(--danger)";
+                    haptic('error');
                 }
-            }, 80);
+                
+                btn.disabled = false;
+                isUpgrading = false;
+                
+                // Сбрасываем колесо для следующего раза без анимации
+                setTimeout(() => {
+                    wheel.style.transition = 'none';
+                    wheel.style.transform = `rotate(0deg)`;
+                    setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)'; }, 50);
+                }, 2000);
+
+            }, 4000); // Таймаут должен совпадать с CSS transition
+        }
+
+        // === ЛОГИКА КЕЙСОВ (РУЛЕТКА) ===
+        function openCaseModal(caseName, price) {
+            haptic('medium');
+            const modal = document.getElementById('case-modal');
+            const track = document.getElementById('roulette-track');
+            
+            track.innerHTML = '';
+            // Генерируем 50 рандомных предметов для прокрутки
+            for (let i = 0; i < 50; i++) {
+                const item = document.createElement('div');
+                item.className = 'roulette-item';
+                item.innerText = "Брейнрот #" + (Math.floor(Math.random() * 100) + 1);
+                track.appendChild(item);
+            }
+            
+            // Сбрасываем позицию
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0px)';
+            modal.classList.add('active');
+            
+            // Запускаем анимацию через 100мс, чтобы DOM успел обновиться
+            setTimeout(() => {
+                // Прокручиваем на ~3000px (ширина 50 элементов по 120px)
+                // И останавливаем на каком-то элементе
+                const randomOffset = Math.floor(Math.random() * 200) - 100;
+                track.style.transition = 'transform 4s cubic-bezier(0.1, 1, 0.1, 1)';
+                track.style.transform = `translateX(-3000px) translateX(${randomOffset}px)`;
+                
+                setTimeout(() => {
+                    haptic('success');
+                }, 4000);
+            }, 50);
+        }
+
+        function closeCaseModal() {
+            haptic('light');
+            document.getElementById('case-modal').classList.remove('active');
         }
     </script>
 </body>
-</html>
+    </html>
